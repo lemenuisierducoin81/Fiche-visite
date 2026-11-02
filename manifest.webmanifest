@@ -1,0 +1,16 @@
+{
+  "name": "Fiche de visite — Le Menuisier du Coin",
+  "short_name": "Fiche de visite",
+  "description": "Relevé de visite de chantier, utilisable sans connexion.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAF7F2",
+  "theme_color": "#000000",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

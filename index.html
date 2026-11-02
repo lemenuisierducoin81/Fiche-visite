@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Fiche de visite">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Fiche de visite — Le Menuisier du Coin</title>
+<style>
+:root{
+  --bg:#FAF7F2; --surface:#FFFFFF; --surface-2:#F3EDE4;
+  --ink:#16130F; --muted:#6B6257; --line:#E4DCD0;
+  --accent:#E3BE85; --accent-deep:#8A6A3A;
+  --ok:#3F7D4E; --crit:#A8372C;
+  --display:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#141210; --surface:#1E1B18; --surface-2:#272320;
+  --ink:#F3EEE6; --muted:#A79C8D; --line:#332E28; --accent-deep:#E3BE85;
+  --ok:#73B183; --crit:#E07A6E; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto}
+h1,h2{font-family:var(--display);margin:0;letter-spacing:-.01em}
+h1{font-size:20px;font-weight:700}
+header.top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+header.top svg{width:30px;height:30px;flex:none}
+.lede{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+fieldset{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px;margin:0 0 14px}
+legend{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f.wide{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:var(--muted)}
+input,textarea,select,button{font:inherit;color:inherit}
+input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:11px 12px;width:100%}
+textarea{min-height:190px;resize:vertical;line-height:1.55}
+.types{display:flex;flex-wrap:wrap;gap:8px}
+.types label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:8px 13px;background:var(--bg);font-size:14px;font-weight:500;color:var(--ink);cursor:pointer}
+.types input{width:17px;height:17px;accent-color:var(--accent-deep);margin:0}
+.ligne-case{display:flex;align-items:center;gap:8px;margin-top:7px;font-size:13.5px;color:var(--muted);font-weight:500;cursor:pointer}
+.ligne-case input{width:17px;height:17px;accent-color:var(--accent-deep);margin:0}
+input:disabled{background:var(--surface-2);color:var(--muted)}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:9px;padding:12px 16px;font-weight:600;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--crit);border:1px solid var(--line)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.code{width:100%;min-height:90px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}
+.saved{font-size:13px;color:var(--ok);min-height:20px;font-weight:600}
+.fiche-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 0;border-top:1px solid var(--line)}
+.fiche-row:first-of-type{border-top:0}
+.fiche-row .d{flex:1;min-width:150px}
+.fiche-row .d b{display:block;font-size:15px}
+.fiche-row .d span{font-size:12.5px;color:var(--muted)}
+.hint{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.version{font-size:11.5px;color:var(--muted);text-align:center;margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+:focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="30" rx="6" fill="var(--ink)"/>
+      <path d="M8 22.5 L16 8 L24 22.5" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M11.5 18.5 H20.5" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+    <h1>Fiche de visite</h1>
+  </header>
+  <p class="lede">Fonctionne sans connexion. Remplissez la fiche chez le client, puis copiez le code et collez-le dans Atelier Suivi au retour.</p>
+
+  <fieldset>
+    <legend>Client</legend>
+    <div class="fields">
+      <div class="f"><label for="c_nom">NOM</label><input id="c_nom" type="text" autocomplete="off" style="text-transform:uppercase"></div>
+      <div class="f"><label for="c_prenom">Prénom</label><input id="c_prenom" type="text" autocomplete="off"></div>
+      <div class="f"><label for="c_tel">Mobile</label><input id="c_tel" type="tel"></div>
+      <div class="f"><label for="c_telFixe">Téléphone fixe</label><input id="c_telFixe" type="tel"></div>
+      <div class="f wide"><label for="c_email">E-mail</label><input id="c_email" type="email"></div>
+      <div class="f wide"><label for="c_adresse">Adresse du client</label><input id="c_adresse" type="text"></div>
+      <div class="f"><label for="c_cp">Code postal</label><input id="c_cp" type="text" inputmode="numeric" maxlength="5"></div>
+      <div class="f"><label for="c_commune">Commune</label><input id="c_commune" type="text" list="communes-cp" placeholder="proposée d’après le code postal"></div>
+      <datalist id="communes-cp"></datalist>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Chantier</legend>
+    <div class="fields">
+      <div class="f wide"><label for="h_nom">Nom du chantier</label><input id="h_nom" type="text" placeholder="Fenêtres RDC, dressing chambre…"></div>
+      <div class="f wide"><label for="h_adresse">Adresse du chantier</label>
+        <input id="h_adresse" type="text">
+        <label class="ligne-case"><input id="h_ident" type="checkbox"><span>identique à l’adresse du client</span></label>
+      </div>
+      <div class="f"><label for="h_commune">Commune</label><input id="h_commune" type="text" list="communes"></div>
+      <div class="f"><label for="h_visite">Date de la visite</label><input id="h_visite" type="date"></div>
+      <div class="f"><label for="h_numero">N° de dossier existant</label><input id="h_numero" type="text" placeholder="laisser vide si nouveau"></div>
+      <div class="f wide"><label>Travaux</label><div class="types" id="types"></div></div>
+      <div class="f wide" id="bloc_autre" hidden><label for="h_autre">Préciser « Autre »</label><input id="h_autre" type="text"></div>
+    </div>
+  </fieldset>
+
+  <fieldset id="fs_dechets">
+    <legend>Retraitement des déchets</legend>
+    <div class="types">
+      <label><input id="d_nous" type="checkbox"><span>Effectué par nous</span></label>
+      <label><input id="d_client" type="checkbox"><span>Effectué par le client</span></label>
+    </div>
+    <div class="f wide" style="margin-top:12px"><label for="d_obs">Observation</label>
+      <input id="d_obs" type="text" placeholder="Nature des déchets, benne, dépôt en déchèterie, accord passé…"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Relevés et notes techniques</legend>
+    <div class="f wide">
+      <label for="t_notes">Cotes, contraintes, choix du client</label>
+      <textarea id="t_notes" placeholder="R1 — fenêtre salon : 1200 x 1350, tableau, ouvrant 2 vantaux&#10;R2 — …&#10;&#10;Accès : cour arrière, pas d'échafaudage&#10;Couleur retenue :"></textarea>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <button type="button" class="btn" id="save">Enregistrer et créer le code</button>
+    <button type="button" class="btn ghost" id="clear">Vider le formulaire</button>
+  </div>
+  <p class="saved" id="msg"></p>
+  <p class="hint" style="margin:-6px 0 18px">Un clic suffit : la fiche est gardée sur la tablette et son code apparaît juste en dessous.</p>
+
+  <fieldset>
+    <legend>Fiches enregistrées sur cette tablette</legend>
+    <div id="list"></div>
+    <div class="actions" style="margin:14px 0 0"><button type="button" class="btn ghost" id="exportAll">Copier toutes les fiches</button></div>
+    <div class="f wide" style="margin-top:12px" id="codebox" hidden>
+      <label for="code">Code à coller dans Atelier Suivi</label>
+      <textarea id="code" class="code" readonly></textarea>
+      <div class="actions" style="margin:10px 0 0">
+        <button type="button" class="btn" id="copy">Copier le code</button>
+        <button type="button" class="btn ghost" id="dl">Télécharger en fichier</button>
+      </div>
+    </div>
+    <p class="hint">Les fiches restent dans le navigateur de cette tablette. Supprimez-les une fois importées.</p>
+  </fieldset>
+  <p class="version">Fiche de visite — version du 2026-11-02 · <span id="etat-maj">copie locale active</span></p>
+</div>
+
+<datalist id="communes">
+  <option value="Alban"><option value="Paulinet"><option value="Teillet"><option value="Réalmont">
+  <option value="Villefranche-d'Albigeois"><option value="Fréjairolles"><option value="Plaisance"><option value="Albi">
+</datalist>
+
+<script>
+(function(){
+"use strict";
+var TYPES=["Fenêtres","Porte-fenêtres","Porte d'entrée","Volets roulants","Agencement","Cuisine","Dressing","Escalier","Meuble sur mesure","Parquet / plancher","Autre"];
+var KEY="mdc_fiches_visite";
+var CHAMPS=["c_nom","c_prenom","c_tel","c_telFixe","c_email","c_adresse","c_cp","c_commune","h_nom","h_adresse","h_commune","h_visite","h_numero","h_autre","d_obs","t_notes"];
+var CP_DEFAUT={"81000":["Albi"],"81100":["Castres"],"81120":["Réalmont","Teillet","Lombers"],"81160":["Saint-Juéry"],
+  "81200":["Mazamet"],"81250":["Alban","Paulinet"],"81300":["Graulhet"],"81430":["Villefranche-d'Albigeois"],
+  "81600":["Gaillac"],"81990":["Fréjairolles","Cunac","Puygouzon"]};
+var CP_APPRIS_KEY="mdc_cp_appris";
+function cpLus(){ try{ return JSON.parse(localStorage.getItem(CP_APPRIS_KEY)||"{}"); }catch(e){ return {}; } }
+function cpCommunes(cp){
+  cp=String(cp||"").trim();
+  var a=(CP_DEFAUT[cp]||[]).slice();
+  (cpLus()[cp]||[]).forEach(function(v){ if(a.indexOf(v)<0) a.push(v); });
+  return a.sort(function(x,y){ return x.localeCompare(y,"fr"); });
+}
+function apprendreCP(cp, commune){
+  cp=String(cp||"").trim(); commune=String(commune||"").trim();
+  if(!/^\d{5}$/.test(cp) || !commune || cpCommunes(cp).indexOf(commune)>-1) return;
+  var t=cpLus(); t[cp]=(t[cp]||[]).concat([commune]);
+  try{ localStorage.setItem(CP_APPRIS_KEY, JSON.stringify(t)); }catch(e){}
+}
+
+document.getElementById("types").innerHTML = TYPES.map(function(t,i){
+  return '<label><input type="checkbox" value="'+t+'" id="ty'+i+'"><span>'+t+'</span></label>';
+}).join("");
+
+function el(id){ return document.getElementById(id); }
+function lire(){ try{ return JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ return []; } }
+function ecrire(a){ try{ localStorage.setItem(KEY, JSON.stringify(a)); return true; }catch(e){ return false; } }
+function b64(str){ var b=new TextEncoder().encode(str), s=""; b.forEach(function(x){ s+=String.fromCharCode(x); }); return btoa(s); }
+function msg(t){ el("msg").textContent=t; clearTimeout(msg._t); msg._t=setTimeout(function(){ el("msg").textContent=""; },3000); }
+
+function collecte(){
+  var types=[];
+  document.querySelectorAll("#types input:checked").forEach(function(n){ types.push(n.value); });
+  return {
+    id: "v"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    cree: new Date().toISOString().slice(0,10),
+    client:{ nom:el("c_nom").value.trim().toUpperCase(), prenom:el("c_prenom").value.trim(),
+             tel:el("c_tel").value.trim(), telFixe:el("c_telFixe").value.trim(), email:el("c_email").value.trim(),
+             adresse:el("c_adresse").value.trim(), cp:el("c_cp").value.trim(), commune:el("c_commune").value.trim() },
+    chantier:{ nom:el("h_nom").value.trim(),
+               adresse:el("h_ident").checked ? el("c_adresse").value.trim() : el("h_adresse").value.trim(),
+               commune:el("h_ident").checked ? el("c_commune").value.trim() : el("h_commune").value.trim(),
+               cp:el("h_ident").checked ? el("c_cp").value.trim() : "",
+               adresseIdent:el("h_ident").checked,
+               dVisite:el("h_visite").value, numero:el("h_numero").value.trim(),
+               types:types, typeAutre:el("h_autre").value.trim() },
+    dechets:{ nous:el("d_nous").checked, client:el("d_client").checked, obs:el("d_obs").value.trim() },
+    notes: el("t_notes").value
+  };
+}
+function vide(){
+  CHAMPS.forEach(function(id){ el(id).value=""; });
+  document.querySelectorAll("#types input, #fs_dechets input").forEach(function(n){ n.checked=false; });
+  el("h_ident").checked=false;
+  majAutre(); majIdent();
+}
+function majAutre(){
+  var coche=false;
+  document.querySelectorAll("#types input:checked").forEach(function(n){ if(n.value==="Autre") coche=true; });
+  el("bloc_autre").hidden=!coche;
+}
+function majIdent(){
+  var on=el("h_ident").checked;
+  el("h_adresse").disabled=on; el("h_commune").disabled=on;
+  if(on){ el("h_adresse").value=el("c_adresse").value; el("h_commune").value=el("c_commune").value; }
+}
+
+el("save").addEventListener("click", function(){
+  var f=collecte();
+  if(!f.client.nom && !f.chantier.nom){ msg("Indiquez au moins le nom du client ou du chantier."); return; }
+  var a=lire(); a.push(f);
+  var ok=ecrire(a);
+  rendre();
+  montrerCode([f]);                 /* le code s’affiche tout de suite */
+  if(ok){ vide(); msg("Fiche enregistrée. Le code est prêt plus bas."); }
+  else msg("Le code est prêt, mais la fiche n’a pas pu être gardée sur cette tablette : copiez-le maintenant.");
+});
+el("clear").addEventListener("click", function(){ vide(); msg("Formulaire vidé."); });
+
+function rendre(){
+  var a=lire(), box=el("list");
+  if(!a.length){ box.innerHTML='<p class="hint" style="margin:0">Aucune fiche enregistrée pour le moment.</p>'; return; }
+  box.innerHTML = a.map(function(f){
+    var titre=[f.client.nom, f.client.prenom].filter(Boolean).join(" ")||f.chantier.nom||"Fiche sans nom";
+    var sous=[f.chantier.nom, f.chantier.commune, f.chantier.dVisite].filter(Boolean).join(" · ");
+    return '<div class="fiche-row"><div class="d"><b>'+esc(titre)+'</b><span>'+esc(sous||f.cree)+'</span></div>'+
+      '<button type="button" class="btn ghost" data-ex="'+f.id+'">Copier</button>'+
+      '<button type="button" class="btn danger" data-del="'+f.id+'">Supprimer</button></div>';
+  }).join("");
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+document.addEventListener("click", function(ev){
+  var b=ev.target.closest("[data-ex],[data-del]");
+  if(!b) return;
+  var a=lire();
+  if(b.dataset.del){
+    ecrire(a.filter(function(f){ return f.id!==b.dataset.del; }));
+    rendre(); msg("Fiche supprimée."); return;
+  }
+  var f=null; a.forEach(function(x){ if(x.id===b.dataset.ex) f=x; });
+  if(f) montrerCode([f]);
+});
+el("exportAll").addEventListener("click", function(){
+  var a=lire();
+  if(!a.length){ msg("Aucune fiche enregistrée : remplissez le formulaire puis cliquez sur « Enregistrer et créer le code »."); return; }
+  montrerCode(a);
+});
+
+var dernier="";
+function montrerCode(fiches){
+  dernier = "MDC1-"+b64(JSON.stringify({v:1, source:"fiche-visite", fiches:fiches}));
+  el("code").value = dernier;
+  el("codebox").hidden = false;
+  el("code").scrollIntoView({behavior:"smooth", block:"center"});
+  el("code").select();
+}
+el("copy").addEventListener("click", function(){
+  var t=el("code");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(function(){ msg("Code copié."); },
+      function(){ t.select(); document.execCommand && document.execCommand("copy"); msg("Code sélectionné, faites Copier."); });
+  } else { t.select(); try{ document.execCommand("copy"); msg("Code copié."); }catch(e){ msg("Sélectionnez le texte et copiez-le."); } }
+});
+el("dl").addEventListener("click", function(){
+  var blob=new Blob([dernier],{type:"text/plain"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="visite-"+new Date().toISOString().slice(0,10)+".txt";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+
+function majCP(){
+  var l=cpCommunes(el("c_cp").value);
+  if(!l.length) l=["Alban","Paulinet","Teillet","Réalmont","Villefranche-d'Albigeois","Fréjairolles","Plaisance","Albi"];
+  el("communes-cp").innerHTML = l.map(function(x){ return '<option value="'+esc(x)+'">'; }).join("");
+}
+el("c_cp").addEventListener("input", function(){
+  var v=el("c_cp").value.replace(/\D/g,"").slice(0,5);
+  if(el("c_cp").value!==v) el("c_cp").value=v;
+  majCP();
+});
+el("c_commune").addEventListener("change", function(){ apprendreCP(el("c_cp").value, el("c_commune").value); majCP(); });
+el("c_nom").addEventListener("change", function(){ el("c_nom").value=el("c_nom").value.toUpperCase(); });
+document.getElementById("types").addEventListener("change", majAutre);
+el("h_ident").addEventListener("change", majIdent);
+["c_adresse","c_commune"].forEach(function(id){ el(id).addEventListener("input", function(){ if(el("h_ident").checked) majIdent(); }); });
+majAutre(); majIdent();
+majCP();
+
+el("h_visite").value = new Date().toISOString().slice(0,10);
+rendre();
+
+/* Garde une copie complète de la page pour l'utiliser sans réseau. */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").then(function(){
+      var e=document.getElementById("etat-maj");
+      if(e) e.textContent = navigator.onLine ? "à jour" : "copie locale active";
+    }, function(){});
+  });
+}
+})();
+</script>
+</body>
+</html>
