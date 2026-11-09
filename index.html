@@ -65,6 +65,9 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
 .fiche-row .d b{display:block;font-size:15px}
 .fiche-row .d span{font-size:12.5px;color:var(--muted)}
 .hint{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.enmodif{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:11px 14px;border:1px solid var(--accent-deep);border-left-width:4px;border-radius:8px;background:rgba(227,190,133,.14);font-size:13.5px}
+.enmodif b{font-family:var(--display)}
+.enmodif button{margin-left:auto}
 .version{font-size:11.5px;color:var(--muted);text-align:center;margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line)}
 :focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px}
 </style>
@@ -82,6 +85,11 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
     <h1>Fiche de visite</h1>
   </header>
   <p class="lede">Fonctionne sans connexion. Remplissez la fiche chez le client, puis copiez le code et collez-le dans Atelier Suivi au retour.</p>
+
+  <div class="enmodif" id="enmodif" hidden>
+    <span>Modification de la fiche <b id="enmodif-nom"></b></span>
+    <button type="button" class="btn ghost" id="annuler-modif">Abandonner les modifications</button>
+  </div>
 
   <fieldset>
     <legend>Client</legend>
@@ -153,7 +161,7 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
     </div>
     <p class="hint">Les fiches restent dans le navigateur de cette tablette. Supprimez-les une fois importées.</p>
   </fieldset>
-  <p class="version">Fiche de visite — version du 2026-11-02 · <span id="etat-maj">copie locale active</span></p>
+  <p class="version">Fiche de visite — version du 2026-11-09 · <span id="etat-maj">copie locale active</span></p>
 </div>
 
 <datalist id="communes">
@@ -219,7 +227,45 @@ function vide(){
   CHAMPS.forEach(function(id){ el(id).value=""; });
   document.querySelectorAll("#types input, #fs_dechets input").forEach(function(n){ n.checked=false; });
   el("h_ident").checked=false;
+  majAutre(); majIdent(); finModif();
+}
+
+/* ---- reprise d'une fiche deja enregistree ---- */
+var enModif = "";          /* id de la fiche en cours de modification */
+
+function titreFiche(f){
+  return [f.client.nom, f.client.prenom].filter(Boolean).join(" ") || f.chantier.nom || "fiche sans nom";
+}
+function finModif(){
+  enModif = "";
+  el("enmodif").hidden = true;
+  el("save").textContent = "Enregistrer et créer le code";
+}
+function debutModif(f){
+  enModif = f.id;
+  el("enmodif-nom").textContent = titreFiche(f);
+  el("enmodif").hidden = false;
+  el("save").textContent = "Enregistrer les modifications";
+}
+function remplir(f){
+  var c=f.client||{}, h=f.chantier||{}, d=f.dechets||{};
+  el("c_nom").value=c.nom||""; el("c_prenom").value=c.prenom||"";
+  el("c_tel").value=c.tel||""; el("c_telFixe").value=c.telFixe||"";
+  el("c_email").value=c.email||""; el("c_adresse").value=c.adresse||"";
+  el("c_cp").value=c.cp||""; el("c_commune").value=c.commune||"";
+  el("h_nom").value=h.nom||"";
+  el("h_ident").checked=!!h.adresseIdent;
+  el("h_adresse").value=h.adresseIdent ? (c.adresse||"") : (h.adresse||"");
+  el("h_commune").value=h.adresseIdent ? (c.commune||"") : (h.commune||"");
+  el("h_visite").value=h.dVisite||""; el("h_numero").value=h.numero||"";
+  el("h_autre").value=h.typeAutre||"";
+  var coches=h.types||[];
+  document.querySelectorAll("#types input").forEach(function(n){ n.checked = coches.indexOf(n.value)>-1; });
+  el("d_nous").checked=!!d.nous; el("d_client").checked=!!d.client; el("d_obs").value=d.obs||"";
+  el("t_notes").value=f.notes||"";
   majAutre(); majIdent();
+  debutModif(f);
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 function majAutre(){
   var coche=false;
@@ -235,13 +281,23 @@ function majIdent(){
 el("save").addEventListener("click", function(){
   var f=collecte();
   if(!f.client.nom && !f.chantier.nom){ msg("Indiquez au moins le nom du client ou du chantier."); return; }
-  var a=lire(); a.push(f);
+  var a=lire(), reprise=false;
+  if(enModif){
+    for(var i=0;i<a.length;i++){
+      if(a[i].id===enModif){
+        f.id=a[i].id; f.cree=a[i].cree;   /* la fiche garde son identité et sa date de création */
+        a[i]=f; reprise=true; break;
+      }
+    }
+  }
+  if(!reprise) a.push(f);
   var ok=ecrire(a);
   rendre();
   montrerCode([f]);                 /* le code s’affiche tout de suite */
-  if(ok){ vide(); msg("Fiche enregistrée. Le code est prêt plus bas."); }
+  if(ok){ vide(); msg(reprise ? "Fiche modifiée. Son nouveau code est prêt plus bas." : "Fiche enregistrée. Le code est prêt plus bas."); }
   else msg("Le code est prêt, mais la fiche n’a pas pu être gardée sur cette tablette : copiez-le maintenant.");
 });
+el("annuler-modif").addEventListener("click", function(){ vide(); msg("Modification abandonnée, la fiche est restée telle quelle."); });
 el("clear").addEventListener("click", function(){ vide(); msg("Formulaire vidé."); });
 
 function rendre(){
@@ -251,6 +307,7 @@ function rendre(){
     var titre=[f.client.nom, f.client.prenom].filter(Boolean).join(" ")||f.chantier.nom||"Fiche sans nom";
     var sous=[f.chantier.nom, f.chantier.commune, f.chantier.dVisite].filter(Boolean).join(" · ");
     return '<div class="fiche-row"><div class="d"><b>'+esc(titre)+'</b><span>'+esc(sous||f.cree)+'</span></div>'+
+      '<button type="button" class="btn ghost" data-mod="'+f.id+'">Modifier</button>'+
       '<button type="button" class="btn ghost" data-ex="'+f.id+'">Copier</button>'+
       '<button type="button" class="btn danger" data-del="'+f.id+'">Supprimer</button></div>';
   }).join("");
@@ -258,12 +315,18 @@ function rendre(){
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
 document.addEventListener("click", function(ev){
-  var b=ev.target.closest("[data-ex],[data-del]");
+  var b=ev.target.closest("[data-ex],[data-del],[data-mod]");
   if(!b) return;
   var a=lire();
   if(b.dataset.del){
     ecrire(a.filter(function(f){ return f.id!==b.dataset.del; }));
+    if(enModif===b.dataset.del) vide();
     rendre(); msg("Fiche supprimée."); return;
+  }
+  if(b.dataset.mod){
+    var g=null; a.forEach(function(x){ if(x.id===b.dataset.mod) g=x; });
+    if(g){ remplir(g); el("codebox").hidden=true; msg("Fiche reprise : modifiez-la puis réenregistrez-la."); }
+    return;
   }
   var f=null; a.forEach(function(x){ if(x.id===b.dataset.ex) f=x; });
   if(f) montrerCode([f]);
