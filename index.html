@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Fiche de visite">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex, nofollow">
-<meta name="fiche-version" content="2026-11-09b">
+<meta name="fiche-version" content="2026-11-09c">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -142,7 +142,11 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
   <fieldset>
     <legend>Relevés et notes techniques</legend>
     <div class="f wide">
-      <label for="t_notes">Cotes, contraintes, choix du client</label>
+      <label for="t_acces">Contraintes d’accès</label>
+      <textarea id="t_acces" style="min-height:80px" placeholder="Cour arrière, pas d’échafaudage&#10;Portail étroit, 2,10 m&#10;Étage sans ascenseur&#10;Stationnement difficile"></textarea>
+    </div>
+    <div class="f wide" style="margin-top:12px">
+      <label for="t_notes">Cotes et choix du client</label>
       <textarea id="t_notes" placeholder="R1 — fenêtre salon : 1200 x 1350, tableau, ouvrant 2 vantaux&#10;R2 — …&#10;&#10;Accès : cour arrière, pas d'échafaudage&#10;Couleur retenue :"></textarea>
     </div>
   </fieldset>
@@ -181,7 +185,7 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
 "use strict";
 var TYPES=["Fenêtres","Porte-fenêtres","Porte d'entrée","Volets roulants","Agencement","Cuisine","Dressing","Escalier","Meuble sur mesure","Parquet / plancher","Autre"];
 var KEY="mdc_fiches_visite";
-var CHAMPS=["c_nom","c_prenom","c_tel","c_telFixe","c_email","c_adresse","c_cp","c_commune","h_nom","h_adresse","h_commune","h_visite","h_numero","h_autre","d_obs","t_notes"];
+var CHAMPS=["c_nom","c_prenom","c_tel","c_telFixe","c_email","c_adresse","c_cp","c_commune","h_nom","h_adresse","h_commune","h_visite","h_numero","h_autre","d_obs","t_acces","t_notes"];
 var CP_DEFAUT={"81000":["Albi"],"81100":["Castres"],"81120":["Réalmont","Teillet","Lombers"],"81160":["Saint-Juéry"],
   "81200":["Mazamet"],"81250":["Alban","Paulinet"],"81300":["Graulhet"],"81430":["Villefranche-d'Albigeois"],
   "81600":["Gaillac"],"81990":["Fréjairolles","Cunac","Puygouzon"]};
@@ -225,7 +229,8 @@ function collecte(){
                cp:el("h_ident").checked ? el("c_cp").value.trim() : "",
                adresseIdent:el("h_ident").checked,
                dVisite:el("h_visite").value, numero:el("h_numero").value.trim(),
-               types:types, typeAutre:el("h_autre").value.trim() },
+               types:types, typeAutre:el("h_autre").value.trim(),
+               acces:el("t_acces").value.trim() },
     dechets:{ nous:el("d_nous").checked, client:el("d_client").checked, obs:el("d_obs").value.trim() },
     notes: el("t_notes").value
   };
@@ -270,6 +275,7 @@ function remplir(f){
   var coches=h.types||[];
   document.querySelectorAll("#types input").forEach(function(n){ n.checked = coches.indexOf(n.value)>-1; });
   el("d_nous").checked=!!d.nous; el("d_client").checked=!!d.client; el("d_obs").value=d.obs||"";
+  el("t_acces").value=h.acces||"";
   el("t_notes").value=f.notes||"";
   majAutre(); majIdent();
   debutModif(f);

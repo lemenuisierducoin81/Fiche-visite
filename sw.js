@@ -2,7 +2,7 @@
    Stratégie : on va voir le réseau d'abord, et on se rabat sur la copie
    locale dès qu'il manque. Ainsi la tablette a toujours la dernière
    version quand elle est connectée, et fonctionne quand elle ne l'est pas. */
-var VERSION = "2026-11-09b";
+var VERSION = "2026-11-09c";
 var CACHE = "fiche-visite-" + VERSION;
 var FICHIERS = ["./", "./index.html", "./manifest.webmanifest",
                 "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
