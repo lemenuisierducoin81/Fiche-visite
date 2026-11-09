@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Fiche de visite">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex, nofollow">
+<meta name="fiche-version" content="2026-11-09b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -69,6 +70,8 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
 .enmodif b{font-family:var(--display)}
 .enmodif button{margin-left:auto}
 .version{font-size:11.5px;color:var(--muted);text-align:center;margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+.version button{font:inherit;color:var(--accent-deep);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-left:4px;cursor:pointer}
+.version button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:2px solid var(--accent-deep);outline-offset:2px}
 </style>
 </head>
@@ -96,6 +99,10 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
     <div class="fields">
       <div class="f"><label for="c_nom">NOM</label><input id="c_nom" type="text" autocomplete="off" style="text-transform:uppercase"></div>
       <div class="f"><label for="c_prenom">Prénom</label><input id="c_prenom" type="text" autocomplete="off"></div>
+      <div class="f wide">
+        <label class="ligne-case"><input id="c_nouveau" type="checkbox"><span>nouveau client</span></label>
+        <p class="hint" style="margin:6px 0 0">À cocher si ce client n’est pas encore dans le fichier : à l’import, il sera créé même s’il porte le même nom qu’un autre.</p>
+      </div>
       <div class="f"><label for="c_tel">Mobile</label><input id="c_tel" type="tel"></div>
       <div class="f"><label for="c_telFixe">Téléphone fixe</label><input id="c_telFixe" type="tel"></div>
       <div class="f wide"><label for="c_email">E-mail</label><input id="c_email" type="email"></div>
@@ -161,7 +168,7 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
     </div>
     <p class="hint">Les fiches restent dans le navigateur de cette tablette. Supprimez-les une fois importées.</p>
   </fieldset>
-  <p class="version">Fiche de visite — version du 2026-11-09 · <span id="etat-maj">copie locale active</span></p>
+  <p class="version">Fiche de visite — version du <span id="no-version">—</span> · <span id="etat-maj">copie locale active</span> <button type="button" id="maj">Mettre à jour</button></p>
 </div>
 
 <datalist id="communes">
@@ -209,7 +216,7 @@ function collecte(){
   return {
     id: "v"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     cree: new Date().toISOString().slice(0,10),
-    client:{ nom:el("c_nom").value.trim().toUpperCase(), prenom:el("c_prenom").value.trim(),
+    client:{ nom:el("c_nom").value.trim().toUpperCase(), prenom:el("c_prenom").value.trim(), nouveau:el("c_nouveau").checked,
              tel:el("c_tel").value.trim(), telFixe:el("c_telFixe").value.trim(), email:el("c_email").value.trim(),
              adresse:el("c_adresse").value.trim(), cp:el("c_cp").value.trim(), commune:el("c_commune").value.trim() },
     chantier:{ nom:el("h_nom").value.trim(),
@@ -226,7 +233,7 @@ function collecte(){
 function vide(){
   CHAMPS.forEach(function(id){ el(id).value=""; });
   document.querySelectorAll("#types input, #fs_dechets input").forEach(function(n){ n.checked=false; });
-  el("h_ident").checked=false;
+  el("h_ident").checked=false; el("c_nouveau").checked=false;
   majAutre(); majIdent(); finModif();
 }
 
@@ -253,6 +260,7 @@ function remplir(f){
   el("c_tel").value=c.tel||""; el("c_telFixe").value=c.telFixe||"";
   el("c_email").value=c.email||""; el("c_adresse").value=c.adresse||"";
   el("c_cp").value=c.cp||""; el("c_commune").value=c.commune||"";
+  el("c_nouveau").checked=!!c.nouveau;
   el("h_nom").value=h.nom||"";
   el("h_ident").checked=!!h.adresseIdent;
   el("h_adresse").value=h.adresseIdent ? (c.adresse||"") : (h.adresse||"");
@@ -383,14 +391,47 @@ el("h_visite").value = new Date().toISOString().slice(0,10);
 rendre();
 
 /* Garde une copie complète de la page pour l'utiliser sans réseau. */
+var VERSION_PAGE = (document.querySelector('meta[name="fiche-version"]')||{}).content || "";
+el("no-version").textContent = VERSION_PAGE;
+function etatMaj(t){ el("etat-maj").textContent = t; }
+
 if("serviceWorker" in navigator){
   window.addEventListener("load", function(){
     navigator.serviceWorker.register("sw.js").then(function(){
-      var e=document.getElementById("etat-maj");
-      if(e) e.textContent = navigator.onLine ? "à jour" : "copie locale active";
+      etatMaj(navigator.onLine ? "à jour" : "copie locale active");
     }, function(){});
   });
 }
+
+/* Va chercher sur GitHub si une version plus récente existe, et ne vide la copie
+   locale qu'une fois le réseau confirmé : hors connexion, la fiche reste intacte. */
+function viderCopieLocale(){
+  var t=[];
+  if(window.caches && caches.keys){
+    t.push(caches.keys().then(function(k){ return Promise.all(k.map(function(x){ return caches.delete(x); })); }));
+  }
+  if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+    t.push(navigator.serviceWorker.getRegistrations().then(function(r){ return Promise.all(r.map(function(x){ return x.unregister(); })); }));
+  }
+  return Promise.all(t)["catch"](function(){});
+}
+el("maj").addEventListener("click", function(){
+  var b=this;
+  if(navigator.onLine===false){ etatMaj("pas de connexion, réessayez une fois en ligne"); return; }
+  b.disabled=true; etatMaj("vérification…");
+  fetch("index.html?maj="+Date.now(), {cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw new Error("reseau"); return r.text(); })
+    .then(function(txt){
+      var m=/<meta name="fiche-version" content="([^"]+)">/.exec(txt);
+      var dispo=m?m[1]:"";
+      if(dispo && dispo===VERSION_PAGE){ etatMaj("déjà à jour"); b.disabled=false; return; }
+      etatMaj("mise à jour…");
+      return viderCopieLocale().then(function(){ location.reload(); });
+    })["catch"](function(){
+      etatMaj("pas de connexion, réessayez une fois en ligne");
+      b.disabled=false;
+    });
+});
 })();
 </script>
 </body>
