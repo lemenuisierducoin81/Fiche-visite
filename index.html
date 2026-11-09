@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Fiche de visite">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex, nofollow">
-<meta name="fiche-version" content="2026-11-09c">
+<meta name="fiche-version" content="2026-11-09e">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -65,6 +65,8 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
 .fiche-row .d{flex:1;min-width:150px}
 .fiche-row .d b{display:block;font-size:15px}
 .fiche-row .d span{font-size:12.5px;color:var(--muted)}
+.trio{display:flex;gap:8px;flex-wrap:wrap}
+.trio select{flex:1;min-width:125px}
 .hint{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 .enmodif{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:11px 14px;border:1px solid var(--accent-deep);border-left-width:4px;border-radius:8px;background:rgba(227,190,133,.14);font-size:13.5px}
 .enmodif b{font-family:var(--display)}
@@ -124,6 +126,21 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
       <div class="f"><label for="h_commune">Commune</label><input id="h_commune" type="text" list="communes"></div>
       <div class="f"><label for="h_visite">Date de la visite</label><input id="h_visite" type="date"></div>
       <div class="f"><label for="h_numero">N° de dossier existant</label><input id="h_numero" type="text" placeholder="laisser vide si nouveau"></div>
+      <div class="f wide"><label for="h_delai_p">Délai annoncé sur place</label>
+        <div class="trio">
+          <select id="h_delai_p"><option value="">Début / Mi / Fin</option><option>Début</option><option>Mi</option><option>Fin</option></select>
+          <select id="h_delai_m"><option value="">Mois</option></select>
+          <select id="h_delai_a"><option value="">Année</option></select>
+        </div>
+      </div>
+      <div class="f wide">
+        <label>Prestation</label>
+        <div class="types" style="margin-top:4px">
+          <label><input id="p_fab" type="checkbox"><span>Fabrication</span></label>
+          <label><input id="p_pose" type="checkbox"><span>Pose</span></label>
+          <label><input id="p_fourn" type="checkbox"><span>Fourniture seule</span></label>
+        </div>
+      </div>
       <div class="f wide"><label>Travaux</label><div class="types" id="types"></div></div>
       <div class="f wide" id="bloc_autre" hidden><label for="h_autre">Préciser « Autre »</label><input id="h_autre" type="text"></div>
     </div>
@@ -185,7 +202,7 @@ input:disabled{background:var(--surface-2);color:var(--muted)}
 "use strict";
 var TYPES=["Fenêtres","Porte-fenêtres","Porte d'entrée","Volets roulants","Agencement","Cuisine","Dressing","Escalier","Meuble sur mesure","Parquet / plancher","Autre"];
 var KEY="mdc_fiches_visite";
-var CHAMPS=["c_nom","c_prenom","c_tel","c_telFixe","c_email","c_adresse","c_cp","c_commune","h_nom","h_adresse","h_commune","h_visite","h_numero","h_autre","d_obs","t_acces","t_notes"];
+var CHAMPS=["c_nom","c_prenom","c_tel","c_telFixe","c_email","c_adresse","c_cp","c_commune","h_nom","h_adresse","h_commune","h_visite","h_numero","h_delai_p","h_delai_m","h_delai_a","h_autre","d_obs","t_acces","t_notes"];
 var CP_DEFAUT={"81000":["Albi"],"81100":["Castres"],"81120":["Réalmont","Teillet","Lombers"],"81160":["Saint-Juéry"],
   "81200":["Mazamet"],"81250":["Alban","Paulinet"],"81300":["Graulhet"],"81430":["Villefranche-d'Albigeois"],
   "81600":["Gaillac"],"81990":["Fréjairolles","Cunac","Puygouzon"]};
@@ -203,6 +220,15 @@ function apprendreCP(cp, commune){
   var t=cpLus(); t[cp]=(t[cp]||[]).concat([commune]);
   try{ localStorage.setItem(CP_APPRIS_KEY, JSON.stringify(t)); }catch(e){}
 }
+
+(function(){
+  var mois=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  document.getElementById("h_delai_m").insertAdjacentHTML("beforeend",
+    mois.map(function(m){ return '<option>'+m+'</option>'; }).join(""));
+  var a=new Date().getFullYear(), l="";
+  for(var i=0;i<4;i++) l+='<option>'+(a+i)+'</option>';
+  document.getElementById("h_delai_a").insertAdjacentHTML("beforeend", l);
+})();
 
 document.getElementById("types").innerHTML = TYPES.map(function(t,i){
   return '<label><input type="checkbox" value="'+t+'" id="ty'+i+'"><span>'+t+'</span></label>';
@@ -230,7 +256,9 @@ function collecte(){
                adresseIdent:el("h_ident").checked,
                dVisite:el("h_visite").value, numero:el("h_numero").value.trim(),
                types:types, typeAutre:el("h_autre").value.trim(),
-               acces:el("t_acces").value.trim() },
+               acces:el("t_acces").value.trim(),
+               delaiPeriode:el("h_delai_p").value, delaiMois:el("h_delai_m").value, delaiAnnee:el("h_delai_a").value,
+               fabrication:el("p_fab").checked, pose:el("p_pose").checked, fourniture:el("p_fourn").checked },
     dechets:{ nous:el("d_nous").checked, client:el("d_client").checked, obs:el("d_obs").value.trim() },
     notes: el("t_notes").value
   };
@@ -239,6 +267,7 @@ function vide(){
   CHAMPS.forEach(function(id){ el(id).value=""; });
   document.querySelectorAll("#types input, #fs_dechets input").forEach(function(n){ n.checked=false; });
   el("h_ident").checked=false; el("c_nouveau").checked=false;
+  ["p_fab","p_pose","p_fourn"].forEach(function(i){ el(i).checked=false; });
   majAutre(); majIdent(); finModif();
 }
 
@@ -272,6 +301,8 @@ function remplir(f){
   el("h_commune").value=h.adresseIdent ? (c.commune||"") : (h.commune||"");
   el("h_visite").value=h.dVisite||""; el("h_numero").value=h.numero||"";
   el("h_autre").value=h.typeAutre||"";
+  el("h_delai_p").value=h.delaiPeriode||""; el("h_delai_m").value=h.delaiMois||""; el("h_delai_a").value=h.delaiAnnee||"";
+  el("p_fab").checked=!!h.fabrication; el("p_pose").checked=!!h.pose; el("p_fourn").checked=!!h.fourniture;
   var coches=h.types||[];
   document.querySelectorAll("#types input").forEach(function(n){ n.checked = coches.indexOf(n.value)>-1; });
   el("d_nous").checked=!!d.nous; el("d_client").checked=!!d.client; el("d_obs").value=d.obs||"";
